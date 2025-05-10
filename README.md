@@ -71,6 +71,9 @@
         ```bash
         curl -F "url=https://<YOUR_DEPLOYMENT_URL>/telegram-webhook" https://api.telegram.org/bot<YOUR_BOT_TOKEN>/setWebhook
         ```
+        ```
+        或者直接访问： https://api.telegram.org/bot<YOUR_BOT_TOKEN>/setWebhook?url=https://<YOUR_DEPLOYMENT_URL>/telegram-webhook
+        ```
     * 您应该会收到一个 JSON 响应，其中 `ok` 为 `true`，表示 Webhook 设置成功。
 
 ## 如何使用机器人
@@ -79,7 +82,7 @@
 
 * `/start` 或 `/help`: 显示帮助信息和可用命令列表。
 * `/key <您的_unsend.de_API_Key>`: 设置或更新您在 Moemail 的 API Key。这是使用邮箱管理功能的前提。
-* `/list`: 查看 `unsend.de` 提供的可用邮箱域名。
+* `/list`: 查看 Moemail 提供的可用邮箱域名。
 * `/add [名称] [有效期] [域名]`: 创建一个新的临时邮箱。
     * 如果**不带任何参数** (`/add`)，机器人会自动创建一个随机6位字符前缀、使用设置的域名、有效期为1天的临时邮箱。
     * **参数说明**:
@@ -88,7 +91,7 @@
         * `域名`: (可选) 邮箱的域名 (例如 `moemail.app`)。可从 `/list` 命令获取。
     * **示例**: `/add mytempmail 7d moemail.app`
 * `/mails`: 列出您通过此机器人创建的所有临时邮箱。
-* `/mail <emailId> [cursor]`: 列出指定 `emailId` 邮箱内的邮件摘要。可选 `cursor` 用于分页。
+* `/mail <emailId> [cursor]`: 列出指定 `emailId` 邮箱内的邮件标题。可选 `cursor` 用于分页。
 * `/view <emailId> <messageId>`: 查看指定邮箱 (`emailId`) 中特定邮件 (`messageId`) 的详细内容。如果 AI 功能已启用，还会尝试提取验证码。
 * `/del <emailId>`: 删除指定的临时邮箱。
 

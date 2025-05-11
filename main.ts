@@ -653,6 +653,74 @@ serve(
                 return new Response(statusMessage, { headers: { "Content-Type": "text/plain; charset=utf-8" } });
             }
 
+            // 路由 4: Addy.io 兼容 API 端点 (Bitwarden 集成)
+            // POST /api/v1/aliases
+            if (method === "POST" && pathname === "/api/v1/aliases") {
+                const authHeader = request.headers.get("Authorization");
+                if (!authHeader || !authHeader.toLowerCase().startsWith("bearer ")) {
+                    console.warn("[AddyCompatAPI] 缺少或无效的 Authorization 请求头");
+                    return new Response(JSON.stringify({ error: "Unauthorized: Missing or invalid API Key." }), { status: 401, headers: { "Content-Type": "application/json" } });
+                }
+                const clientUnsendApiKey = authHeader.substring(7).trim(); // 提取 token
+
+                if (!clientUnsendApiKey) {
+                    console.warn("[AddyCompatAPI] Authorization 请求头中的 API Key 为空");
+                    return new Response(JSON.stringify({ error: "Unauthorized: Empty API Key." }), { status: 401, headers: { "Content-Type": "application/json" } });
+                }
+
+                let bitwardenPayload;
+                try {
+                    bitwardenPayload = await request.json();
+                } catch (e) {
+                    console.error("[AddyCompatAPI] 无效的 JSON payload:", e.message);
+                    return new Response(JSON.stringify({ error: "Bad Request: Invalid JSON payload." }), { status: 400, headers: { "Content-Type": "application/json" } });
+                }
+
+                const { domain: requestedDomain, description } = bitwardenPayload;
+
+                if (!requestedDomain || typeof requestedDomain !== 'string' || requestedDomain.trim() === '') {
+                    console.warn("[AddyCompatAPI] 请求体中缺少或无效的 'domain'");
+                    return new Response(JSON.stringify({ error: "Bad Request: Missing or invalid 'domain'." }), { status: 400, headers: { "Content-Type": "application/json" } });
+                }
+                if (description) {
+                    console.log(`[AddyCompatAPI] 收到描述: ${description}`); // 可以选择性记录
+                }
+
+                const unsendPayload: GenerateEmailPayload = {
+                    domain: requestedDomain.trim(),
+                    expiryTime: 86400000, // 默认为1天
+                    // 'name' (前缀) 将被省略，让 unsend.de 自动生成
+                };
+
+                console.log(`[AddyCompatAPI] 调用 unsend.de 生成邮箱，域名: ${unsendPayload.domain}`);
+                const unsendResponse = await generateTempEmail(clientUnsendApiKey, unsendPayload);
+
+                if (unsendResponse.success && unsendResponse.data && unsendResponse.data.email) {
+                    const responseToBitwarden = {
+                        data: {
+                            email: unsendResponse.data.email,
+                            // Bitwarden 的 Addy.io 集成似乎只需要 email 字段
+                        }
+                    };
+                    console.log(`[AddyCompatAPI] 成功生成邮箱: ${unsendResponse.data.email}。正在响应 Bitwarden。`);
+                    return new Response(JSON.stringify(responseToBitwarden), {
+                        status: 201, // Created
+                        headers: { "Content-Type": "application/json" },
+                    });
+                } else {
+                    console.error(`[AddyCompatAPI] 通过 unsend.de 生成邮箱失败: ${unsendResponse.error || "来自 unsend.de 的未知错误"}`);
+                    let errorStatus = 500;
+                    if (unsendResponse.statusCode) {
+                        if (unsendResponse.statusCode === 401 || unsendResponse.statusCode === 403) errorStatus = 401;
+                        else if (unsendResponse.statusCode === 400) errorStatus = 400;
+                    }
+                    return new Response(
+                        JSON.stringify({ error: `通过 unsend.de 创建别名失败: ${unsendResponse.error || "内部服务器错误"}` }),
+                        { status: errorStatus, headers: { "Content-Type": "application/json" } }
+                    );
+                }
+            }
+
             console.log(`[${new Date().toISOString()}] 未处理的请求: ${method} ${pathname}。正在响应 404。`);
             return new Response("未找到端点。", { status: 404, headers: { "Content-Type": "text/plain; charset=utf-8" } });
         } catch (err) {

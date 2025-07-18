@@ -17,7 +17,7 @@ import {
 // --- 环境变量 ---
 const BOT_TOKEN = Deno.env.get("TELEGRAM_BOT_TOKEN");
 const DENO_DEPLOY_BASE_URL =
-    Deno.env.get("DENO_DEPLOY_URL") || "https://light-amoeba-91.deno.dev/";
+    Deno.env.get("DENO_DEPLOY_URL") || "https://careful-koala-12.deno.dev/";
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
 const OPENAI_API_BASE_URL = Deno.env.get("OPENAI_API_BASE_URL") || "https://api.openai.com/v1";
 const OPENAI_MODEL = Deno.env.get("OPENAI_MODEL") || "gpt-3.5-turbo";

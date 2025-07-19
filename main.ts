@@ -23,10 +23,10 @@ const OPENAI_API_BASE_URL = Deno.env.get("OPENAI_API_BASE_URL") || "https://api.
 const OPENAI_MODEL = Deno.env.get("OPENAI_MODEL") || "gpt-3.5-turbo";
 
 const UNSEND_API_BASE_URL =
-    Deno.env.get("UNSEND_API_BASE_URL") || "https://unsend.de/api";
+    Deno.env.get("UNSEND_API_BASE_URL") || "https://mail.cfip.nyc.mn/api";
 
 // 可用域名配置
-const DOMAINS = Deno.env.get("DOMAINS") || "unsend.de";
+const DOMAINS = Deno.env.get("DOMAINS") || "mail.cfip.nyc.mn";
 const AVAILABLE_DOMAINS = DOMAINS.split("|").map(d => d.trim()).filter(Boolean);
 
 // Telegram Webhook 路径固定
@@ -67,13 +67,13 @@ async function validateUserAndApiKey(userId: number | undefined): Promise<Valida
 
     const userApiKey = await getUserUnsendApiKey(userId);
     if (!userApiKey) {
-        return { success: false, error: "请先使用 <code>/key &lt;API_Key&gt;</code> 命令设置您的 unsend.de API Key。" };
+        return { success: false, error: "请先使用 <code>/key &lt;API_Key&gt;</code> 命令设置您的 mail.cfip.nyc.mn API Key。" };
     }
 
     return { success: true, userApiKey };
 }
 
-// --- Deno KV 辅助函数 (用于存储用户 unsend.de API Key) ---
+// --- Deno KV 辅助函数 (用于存储用户 mail.cfip.nyc.mn API Key) ---
 async function saveUserUnsendApiKey(userId: number, apiKey: string): Promise<boolean> {
     if (!kv) return false;
     try {
@@ -137,7 +137,7 @@ async function clearEmailCreationState(userId: number): Promise<boolean> {
     }
 }
 
-// --- Unsend.de API 客户端辅助函数 ---
+// --- mail.cfip.nyc.mn API 客户端辅助函数 ---
 interface UnsendApiResponse<T> {
     success: boolean;
     data?: T;
@@ -303,7 +303,7 @@ bot.command(["start", "help"], async (ctx) => {
     helpText += `📬 <b>邮件通知 Webhook:</b>\n`;
     helpText += `你的专属邮件通知 Webhook 地址是:\n`;
     helpText += `<code>${DENO_DEPLOY_BASE_URL}/${userId}</code>\n`;
-    helpText += `请配置到 <a href="https://unsend.de/profile">Moemail 个人资料页</a>。\n\n`;
+    helpText += `请配置到 <a href="https://mail.cfip.nyc.mn/profile">Moemail 个人资料页</a>。\n\n`;
 
     helpText += `🔑 <b>API Key 管理:</b>\n`;
     helpText += `  <code>/key</code> &lt;你的API_Key&gt; - 设置/更新你的 Moemail API Key。\n`;
@@ -332,10 +332,10 @@ bot.command("key", async (ctx) => {
     const userId = ctx.from?.id;
     if (!userId) { return ctx.reply("无法识别您的用户ID。"); }
     const apiKey = ctx.match;
-    if (!apiKey || apiKey.trim() === "") { return ctx.reply("请提供您的 unsend.de API Key。\n用法: <code>/key YOUR_API_KEY</code>", { parse_mode: "HTML" }); }
+    if (!apiKey || apiKey.trim() === "") { return ctx.reply("请提供您的 mail.cfip.nyc.mn API Key。\n用法: <code>/key YOUR_API_KEY</code>", { parse_mode: "HTML" }); }
 
     const success = await saveUserUnsendApiKey(userId, apiKey.trim());
-    if (success) { await ctx.reply("✅ 您的 unsend.de API Key 已成功保存！"); }
+    if (success) { await ctx.reply("✅ 您的 mail.cfip.nyc.mn API Key 已成功保存！"); }
     else { await ctx.reply("❌ 保存 API Key 时发生错误，请稍后再试。"); }
 });
 
@@ -578,7 +578,7 @@ bot.on("callback_query", async (ctx) => {
     const userApiKey = await getUserUnsendApiKey(userId);
     if (!userApiKey) {
         await clearEmailCreationState(userId);
-        await ctx.editMessageText("请先使用 <code>/key &lt;API_Key&gt;</code> 命令设置您的 unsend.de API Key。", { parse_mode: "HTML" });
+        await ctx.editMessageText("请先使用 <code>/key &lt;API_Key&gt;</code> 命令设置您的 mail.cfip.nyc.mn API Key。", { parse_mode: "HTML" });
         await ctx.answerCallbackQuery();
         return;
     }
@@ -803,7 +803,7 @@ bot.on("message:text", async (ctx) => {
     const userApiKey = await getUserUnsendApiKey(userId);
     if (!userApiKey) {
         await clearEmailCreationState(userId);
-        return ctx.reply("请先使用 <code>/key &lt;API_Key&gt;</code> 命令设置您的 unsend.de API Key。", { parse_mode: "HTML" });
+        return ctx.reply("请先使用 <code>/key &lt;API_Key&gt;</code> 命令设置您的 mail.cfip.nyc.mn API Key。", { parse_mode: "HTML" });
     }
 
     const userInput = ctx.message.text.trim();
@@ -924,7 +924,7 @@ serve(
                     `服务状态: 运行中 🚀\n` +
                     `部署地址: ${DENO_DEPLOY_BASE_URL}\n` +
                     `Telegram Bot Webhook 路径: ${TELEGRAM_WEBHOOK_PATH}\n` +
-                    `Unsend.de API Base: ${UNSEND_API_BASE_URL}\n` +
+                    `mail.cfip.nyc.mn API Base: ${UNSEND_API_BASE_URL}\n` +
                     `邮件通知 Webhook 格式: ${DENO_DEPLOY_BASE_URL}/<您的Telegram用户ID>\n\n`;
                 if (OPENAI_API_KEY) { statusMessage += `AI 验证码提取功能: 已启用\n`; }
                 else { statusMessage += `AI 验证码提取功能: 未启用\n`; }
@@ -1076,10 +1076,10 @@ serve(
                 const unsendPayload: GenerateEmailPayload = {
                     domain: requestedDomain.trim(),
                     expiryTime: 86400000, // 默认为1天
-                    // 'name' (前缀) 将被省略，让 unsend.de 自动生成
+                    // 'name' (前缀) 将被省略，让 mail.cfip.nyc.mn 自动生成
                 };
 
-                console.log(`[AddyCompatAPI] 调用 unsend.de 生成邮箱，域名: ${unsendPayload.domain}`);
+                console.log(`[AddyCompatAPI] 调用 mail.cfip.nyc.mn 生成邮箱，域名: ${unsendPayload.domain}`);
                 const unsendResponse = await generateTempEmail(clientUnsendApiKey, unsendPayload);
 
                 if (unsendResponse.success && unsendResponse.data && unsendResponse.data.email) {
@@ -1095,14 +1095,14 @@ serve(
                         headers: { "Content-Type": "application/json" },
                     });
                 } else {
-                    console.error(`[AddyCompatAPI] 通过 unsend.de 生成邮箱失败: ${unsendResponse.error || "来自 unsend.de 的未知错误"}`);
+                    console.error(`[AddyCompatAPI] 通过 mail.cfip.nyc.mn 生成邮箱失败: ${unsendResponse.error || "来自 mail.cfip.nyc.mn 的未知错误"}`);
                     let errorStatus = 500;
                     if (unsendResponse.statusCode) {
                         if (unsendResponse.statusCode === 401 || unsendResponse.statusCode === 403) errorStatus = 401;
                         else if (unsendResponse.statusCode === 400) errorStatus = 400;
                     }
                     return new Response(
-                        JSON.stringify({ error: `通过 unsend.de 创建别名失败: ${unsendResponse.error || "内部服务器错误"}` }),
+                        JSON.stringify({ error: `通过 mail.cfip.nyc.mn 创建别名失败: ${unsendResponse.error || "内部服务器错误"}` }),
                         { status: errorStatus, headers: { "Content-Type": "application/json" } }
                     );
                 }
